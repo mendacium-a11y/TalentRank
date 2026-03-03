@@ -1,0 +1,490 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TalentRank AI</title>
+    <style>
+        :root {
+            --bg: #ffffff;
+            --text: #333333;
+            --primary: #4f46e5;
+            --primary-hover: #4338ca;
+            --border: #e5e7eb;
+            --card-bg: #f9fafb;
+        }
+
+        [data-theme="dark"] {
+            --bg: #111827;
+            --text: #f9fafb;
+            --primary: #6366f1;
+            --primary-hover: #818cf8;
+            --border: #374151;
+            --card-bg: #1f2937;
+        }
+
+        * {
+            box-sizing: border-box;
+            transition: background-color 0.3s, color 0.3s;
+        }
+
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg);
+            color: var(--text);
+            margin: 0;
+            padding: 2rem;
+            line-height: 1.5;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 2rem;
+        }
+
+        .theme-toggle {
+            background: none;
+            border: 1px solid var(--border);
+            color: var(--text);
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-radius: 0.375rem;
+        }
+
+        .tabs {
+            display: flex;
+            gap: 1rem;
+            margin-bottom: 2rem;
+        }
+
+        .tab-btn {
+            background: none;
+            border: none;
+            color: var(--text);
+            font-size: 1.1rem;
+            font-weight: 600;
+            cursor: pointer;
+            padding: 0.5rem 1rem;
+            border-bottom: 2px solid transparent;
+        }
+
+        .tab-btn.active {
+            border-bottom-color: var(--primary);
+            color: var(--primary);
+        }
+
+        .tab-content {
+            display: none;
+        }
+
+        .tab-content.active {
+            display: block;
+        }
+
+        .card {
+            background-color: var(--card-bg);
+            border: 1px solid var(--border);
+            border-radius: 0.5rem;
+            padding: 1.5rem;
+            margin-bottom: 1.5rem;
+        }
+
+        .form-group {
+            margin-bottom: 1.5rem;
+        }
+
+        label {
+            display: block;
+            font-weight: 500;
+            margin-bottom: 0.5rem;
+        }
+
+        input[type="file"], textarea {
+            width: 100%;
+            padding: 0.75rem;
+            border: 1px solid var(--border);
+            border-radius: 0.375rem;
+            background-color: var(--bg);
+            color: var(--text);
+            font-family: inherit;
+        }
+
+        textarea {
+            resize: vertical;
+            min-height: 120px;
+        }
+
+        .btn {
+            background-color: var(--primary);
+            color: white;
+            border: none;
+            padding: 0.75rem 1.5rem;
+            font-size: 1rem;
+            font-weight: 500;
+            border-radius: 0.375rem;
+            cursor: pointer;
+            width: 100%;
+        }
+
+        .btn:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn:disabled {
+            opacity: 0.7;
+            cursor: not-allowed;
+        }
+
+        .drop-zone {
+            border: 2px dashed var(--border);
+            border-radius: 0.5rem;
+            padding: 3rem 2rem;
+            text-align: center;
+            cursor: pointer;
+            background-color: var(--bg);
+            transition: border-color 0.3s;
+        }
+
+        .drop-zone.dragover {
+            border-color: var(--primary);
+            background-color: var(--card-bg);
+        }
+
+        .results {
+            margin-top: 2rem;
+        }
+
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin-top: 1rem;
+        }
+
+        th, td {
+            padding: 0.75rem;
+            text-align: left;
+            border-bottom: 1px solid var(--border);
+        }
+
+        th {
+            cursor: pointer;
+            background-color: var(--card-bg);
+        }
+
+        th:hover {
+            background-color: var(--border);
+        }
+
+        .loader {
+            display: none;
+            margin-top: 1rem;
+            text-align: center;
+        }
+
+        .progress-container {
+            width: 100%;
+            background-color: var(--border);
+            border-radius: 0.25rem;
+            height: 0.5rem;
+            margin-top: 1rem;
+            display: none;
+        }
+
+        .progress-bar {
+            height: 100%;
+            background-color: var(--primary);
+            border-radius: 0.25rem;
+            width: 0%;
+            transition: width 0.3s;
+        }
+    </style>
+</head>
+<body>
+
+    <header>
+        <h1>TalentRank AI</h1>
+        <button class="theme-toggle" id="themeToggle">Toggle Dark Mode</button>
+    </header>
+
+    <div class="tabs">
+        <button class="tab-btn active" onclick="switchTab('candidate')">Candidate Mode</button>
+        <button class="tab-btn" onclick="switchTab('hr')">HR Batch Mode</button>
+    </div>
+
+    <!-- CANDIDATE TAB -->
+    <div id="candidate" class="tab-content active">
+        <div class="card">
+            <h2>Single Resume Analysis</h2>
+            <form id="candidateForm">
+                <div class="form-group">
+                    <label for="candResume">Upload Resume (PDF)</label>
+                    <input type="file" id="candResume" accept=".pdf" required>
+                </div>
+                <div class="form-group">
+                    <label for="candJd">Job Description</label>
+                    <textarea id="candJd" placeholder="Paste JD here..." required></textarea>
+                </div>
+                <button type="submit" class="btn" id="candBtn">Analyze Candidate</button>
+            </form>
+            <div class="loader" id="candLoader">Processing. This might take a minute...</div>
+        </div>
+
+        <div id="candResults" class="results" style="display: none;">
+            <div class="card">
+                <h3>Analysis Results</h3>
+                <h1 id="candScore">Score: --</h1>
+                <h4>Strengths</h4>
+                <ul id="candStrengths"></ul>
+                <h4>Gaps</h4>
+                <ul id="candGaps"></ul>
+                <h4>Suggested Questions</h4>
+                <ul id="candQuestions"></ul>
+            </div>
+        </div>
+    </div>
+
+    <!-- HR TAB -->
+    <div id="hr" class="tab-content">
+        <div class="card">
+            <h2>Batch Screen Resumes</h2>
+            <form id="hrForm">
+                <div class="form-group">
+                    <label>Upload Resumes (Max 50 PDFs/ZIP)</label>
+                    <div class="drop-zone" id="dropZone">
+                        <p>Drag & Drop files here or click to browse.</p>
+                        <input type="file" id="hrResumes" multiple accept=".pdf,.zip" style="display:none;">
+                    </div>
+                    <p id="fileCount" style="margin-top:0.5rem; font-size:0.9rem;"></p>
+                </div>
+                <div class="form-group">
+                    <label for="hrJd">Job Description</label>
+                    <textarea id="hrJd" placeholder="Paste JD here..." required></textarea>
+                </div>
+                <button type="submit" class="btn" id="hrBtn">Screen Candidates</button>
+                <div class="progress-container" id="hrProgressContainer">
+                    <div class="progress-bar" id="hrProgressBar"></div>
+                </div>
+                <p id="hrStatusText" style="text-align:center; margin-top:0.5rem; display:none;"></p>
+            </form>
+        </div>
+
+        <div id="hrResults" class="results" style="display: none;">
+            <div class="card" style="overflow-x: auto;">
+                <div style="display:flex; justify-content:space-between; align-items:center;">
+                    <h3>Ranking Table</h3>
+                    <button class="btn" style="width:auto;" onclick="downloadCSV()">Export CSV</button>
+                </div>
+                <table id="hrTable">
+                    <thead>
+                        <tr>
+                            <th onclick="sortTable(0)">Rank</th>
+                            <th onclick="sortTable(1)">Filename</th>
+                            <th onclick="sortTable(2)">Score ▼</th>
+                            <th>Strengths Preview</th>
+                        </tr>
+                    </thead>
+                    <tbody id="hrTableBody">
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // Theme logic
+        const toggleBtn = document.getElementById('themeToggle');
+        toggleBtn.addEventListener('click', () => {
+            const isDark = document.body.getAttribute('data-theme') === 'dark';
+            document.body.setAttribute('data-theme', isDark ? 'light' : 'dark');
+        });
+
+        // Tab logic
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
+            document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
+            
+            document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
+            document.getElementById(tabId).classList.add('active');
+        }
+
+        // Drop zone logic
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('hrResumes');
+        const fileCount = document.getElementById('fileCount');
+        let selectedFiles = [];
+
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFiles(e.dataTransfer.files);
+        });
+
+        fileInput.addEventListener('change', (e) => handleFiles(e.target.files));
+
+        function handleFiles(files) {
+            selectedFiles = Array.from(files).slice(0, 50); // Max 50
+            fileCount.textContent = `${selectedFiles.length} file(s) selected`;
+        }
+
+        // Candidate Submit
+        document.getElementById('candidateForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const file = document.getElementById('candResume').files[0];
+            const jd = document.getElementById('candJd').value;
+            
+            if (!file || !jd) return alert("Missing inputs");
+
+            const formData = new FormData();
+            formData.append("resume", file);
+            formData.append("jd", jd);
+
+            const btn = document.getElementById('candBtn');
+            const loader = document.getElementById('candLoader');
+            const results = document.getElementById('candResults');
+
+            btn.disabled = true;
+            loader.style.display = "block";
+            results.style.display = "none";
+
+            try {
+                const res = await fetch("/candidate", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error("Server error");
+                
+                const data = await res.json();
+                
+                document.getElementById('candScore').textContent = `Score: ${data.score}/100`;
+                
+                const formatList = (arr) => arr.map(item => `<li>${item}</li>`).join('');
+                document.getElementById('candStrengths').innerHTML = formatList(data.strengths || []);
+                document.getElementById('candGaps').innerHTML = formatList(data.gaps || []);
+                document.getElementById('candQuestions').innerHTML = formatList(data.questions || []);
+                
+                results.style.display = "block";
+            } catch (err) {
+                alert("Error analyzing resume: " + err.message);
+            } finally {
+                btn.disabled = false;
+                loader.style.display = "none";
+            }
+        });
+
+        // HR Submit (Basic Sync version for Commit 4/5, later we'll add SSE)
+        let currentBatchResults = [];
+
+        document.getElementById('hrForm').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            
+            const jd = document.getElementById('hrJd').value;
+            if (selectedFiles.length === 0 || !jd) return alert("Missing inputs");
+
+            const formData = new FormData();
+            selectedFiles.forEach(f => formData.append("resumes", f));
+            formData.append("jd", jd);
+
+            const btn = document.getElementById('hrBtn');
+            const progressContainer = document.getElementById('hrProgressContainer');
+            const progressBar = document.getElementById('hrProgressBar');
+            const statusText = document.getElementById('hrStatusText');
+            const results = document.getElementById('hrResults');
+
+            btn.disabled = true;
+            progressContainer.style.display = "block";
+            statusText.style.display = "block";
+            statusText.textContent = "Processing batch synchronously... (SSE to come)";
+            progressBar.style.width = "50%";
+            results.style.display = "none";
+
+            try {
+                const res = await fetch("/hr-batch", {
+                    method: "POST",
+                    body: formData
+                });
+                
+                if (!res.ok) throw new Error("Server error");
+                
+                currentBatchResults = await res.json();
+                
+                // Sort by score desc initially
+                currentBatchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+                
+                renderTable();
+                
+                progressBar.style.width = "100%";
+                statusText.textContent = "Complete!";
+                results.style.display = "block";
+            } catch (err) {
+                statusText.textContent = "Error: " + err.message;
+            } finally {
+                btn.disabled = false;
+            }
+        });
+
+        function renderTable() {
+            const tbody = document.getElementById('hrTableBody');
+            tbody.innerHTML = '';
+            
+            currentBatchResults.forEach((row, index) => {
+                const tr = document.createElement('tr');
+                if (index < 3) tr.style.backgroundColor = 'rgba(79, 70, 229, 0.1)'; // Highlight top 3
+                
+                tr.innerHTML = `
+                    <td>${index + 1}</td>
+                    <td>${row.filename}</td>
+                    <td>${row.score || 0}</td>
+                    <td>${(row.strengths || []).join(', ').substring(0, 50)}...</td>
+                `;
+                tbody.appendChild(tr);
+            });
+        }
+
+        function sortTable(n) {
+            // Simplified sort for now
+            currentBatchResults.sort((a, b) => {
+                if (n === 1) return a.filename.localeCompare(b.filename);
+                if (n === 2) return (b.score || 0) - (a.score || 0); // score desc
+                return 0;
+            });
+            renderTable();
+        }
+
+        function downloadCSV() {
+            if (!currentBatchResults.length) return;
+            
+            const header = ['Filename', 'Score', 'Strengths', 'Gaps'];
+            const rows = currentBatchResults.map(r => [
+                r.filename, 
+                r.score, 
+                `"${(r.strengths || []).join(', ')}"`, 
+                `"${(r.gaps || []).join(', ')}"`
+            ]);
+            
+            const csvContent = "data:text/csv;charset=utf-8," 
+                + [header.join(','), ...rows.map(r => r.join(','))].join("\n");
+            
+            const encodedUri = encodeURI(csvContent);
+            const link = document.createElement("a");
+            link.setAttribute("href", encodedUri);
+            link.setAttribute("download", "talentrank_results.csv");
+            document.body.appendChild(link);
+            link.click();
+            link.remove();
+        }
+
+    </script>
+</body>
+</html>
