@@ -1,5 +1,6 @@
 <!DOCTYPE html>
 <html lang="en">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -101,7 +102,8 @@
             margin-bottom: 0.5rem;
         }
 
-        input[type="file"], textarea {
+        input[type="file"],
+        textarea {
             width: 100%;
             padding: 0.75rem;
             border: 1px solid var(--border);
@@ -162,7 +164,8 @@
             margin-top: 1rem;
         }
 
-        th, td {
+        th,
+        td {
             padding: 0.75rem;
             text-align: left;
             border-bottom: 1px solid var(--border);
@@ -201,6 +204,7 @@
         }
     </style>
 </head>
+
 <body>
 
     <header>
@@ -304,7 +308,7 @@
         function switchTab(tabId) {
             document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.remove('active'));
             document.querySelectorAll('.tab-content').forEach(content => content.classList.remove('active'));
-            
+
             document.querySelector(`button[onclick="switchTab('${tabId}')"]`).classList.add('active');
             document.getElementById(tabId).classList.add('active');
         }
@@ -342,7 +346,7 @@
             e.preventDefault();
             const file = document.getElementById('candResume').files[0];
             const jd = document.getElementById('candJd').value;
-            
+
             if (!file || !jd) return alert("Missing inputs");
 
             const formData = new FormData();
@@ -362,18 +366,18 @@
                     method: "POST",
                     body: formData
                 });
-                
+
                 if (!res.ok) throw new Error("Server error");
-                
+
                 const data = await res.json();
-                
+
                 document.getElementById('candScore').textContent = `Score: ${data.score}/100`;
-                
+
                 const formatList = (arr) => arr.map(item => `<li>${item}</li>`).join('');
                 document.getElementById('candStrengths').innerHTML = formatList(data.strengths || []);
                 document.getElementById('candGaps').innerHTML = formatList(data.gaps || []);
                 document.getElementById('candQuestions').innerHTML = formatList(data.questions || []);
-                
+
                 results.style.display = "block";
             } catch (err) {
                 alert("Error analyzing resume: " + err.message);
@@ -388,7 +392,7 @@
 
         document.getElementById('hrForm').addEventListener('submit', async (e) => {
             e.preventDefault();
-            
+
             const jd = document.getElementById('hrJd').value;
             if (selectedFiles.length === 0 || !jd) return alert("Missing inputs");
 
@@ -405,31 +409,56 @@
             btn.disabled = true;
             progressContainer.style.display = "block";
             statusText.style.display = "block";
-            statusText.textContent = "Processing batch synchronously... (SSE to come)";
-            progressBar.style.width = "50%";
+            statusText.textContent = "Starting batch processing...";
+            progressBar.style.width = "0%";
             results.style.display = "none";
+            currentBatchResults = [];
+            renderTable();
 
             try {
                 const res = await fetch("/hr-batch", {
                     method: "POST",
                     body: formData
                 });
-                
+
                 if (!res.ok) throw new Error("Server error");
-                
-                currentBatchResults = await res.json();
-                
-                // Sort by score desc initially
-                currentBatchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
-                
-                renderTable();
-                
-                progressBar.style.width = "100%";
-                statusText.textContent = "Complete!";
-                results.style.display = "block";
+
+                // Read the Server-Sent Events stream
+                const reader = res.body.getReader();
+                const decoder = new TextDecoder();
+                let buffer = "";
+
+                while (true) {
+                    const { done, value } = await reader.read();
+                    if (done) break;
+
+                    buffer += decoder.decode(value, { stream: true });
+                    const lines = buffer.split('\n\n');
+                    buffer = lines.pop() || ''; // keep the last incomplete chunk in buffer
+
+                    for (const line of lines) {
+                        if (line.startsWith('data: ')) {
+                            const data = JSON.parse(line.substring(6));
+
+                            if (data.type === 'progress') {
+                                const percent = Math.round((data.current / data.total) * 100);
+                                progressBar.style.width = percent + "%";
+                                statusText.textContent = \`Processing \${data.current}/\${data.total}: \${data.filename}\`;
+                            } else if (data.type === 'result') {
+                                currentBatchResults.push(data.data);
+                                // Sort and render dynamically as results come in
+                                currentBatchResults.sort((a, b) => (b.score || 0) - (a.score || 0));
+                                renderTable();
+                                results.style.display = "block";
+                            } else if (data.type === 'complete') {
+                                statusText.textContent = "Complete!";
+                                btn.disabled = false;
+                            }
+                        }
+                    }
+                }
             } catch (err) {
                 statusText.textContent = "Error: " + err.message;
-            } finally {
                 btn.disabled = false;
             }
         });
@@ -443,11 +472,11 @@
                 if (index < 3) tr.style.backgroundColor = 'rgba(79, 70, 229, 0.1)'; // Highlight top 3
                 
                 tr.innerHTML = `
-                    <td>${index + 1}</td>
+                                    < td > ${ index + 1 }</td >
                     <td>${row.filename}</td>
                     <td>${row.score || 0}</td>
                     <td>${(row.strengths || []).join(', ').substring(0, 50)}...</td>
-                `;
+                                `;
                 tbody.appendChild(tr);
             });
         }
@@ -487,4 +516,5 @@
 
     </script>
 </body>
+
 </html>
