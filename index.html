@@ -283,9 +283,9 @@
                 <table id="hrTable">
                     <thead>
                         <tr>
-                            <th onclick="sortTable(0)">Rank</th>
-                            <th onclick="sortTable(1)">Filename</th>
-                            <th onclick="sortTable(2)">Score ▼</th>
+                            <th onclick="sortTable(0)" id="th-0">Rank</th>
+                            <th onclick="sortTable(1)" id="th-1">Filename</th>
+                            <th onclick="sortTable(2)" id="th-2">Score ▼</th>
                             <th>Strengths Preview</th>
                         </tr>
                     </thead>
@@ -443,7 +443,7 @@
                             if (data.type === 'progress') {
                                 const percent = Math.round((data.current / data.total) * 100);
                                 progressBar.style.width = percent + "%";
-                                statusText.textContent = \`Processing \${data.current}/\${data.total}: \${data.filename}\`;
+                                statusText.textContent = `Processing ${data.current}/${data.total}: ${data.filename}`;
                             } else if (data.type === 'result') {
                                 currentBatchResults.push(data.data);
                                 // Sort and render dynamically as results come in
@@ -466,45 +466,78 @@
         function renderTable() {
             const tbody = document.getElementById('hrTableBody');
             tbody.innerHTML = '';
-            
+
+            // Reassign global ranks based on the primary score. Ranks should stay stable.
+            const rankedResults = [...currentBatchResults].sort((a, b) => (b.score || 0) - (a.score || 0));
+            // Add a rank property if not exists
+            rankedResults.forEach((r, idx) => { r._rank = r._rank || (idx + 1); });
+
             currentBatchResults.forEach((row, index) => {
                 const tr = document.createElement('tr');
-                if (index < 3) tr.style.backgroundColor = 'rgba(79, 70, 229, 0.1)'; // Highlight top 3
-                
+                if (row._rank <= 3) tr.style.backgroundColor = 'rgba(79, 70, 229, 0.1)'; // Highlight top 3 globally
+
                 tr.innerHTML = `
-                                    < td > ${ index + 1 }</td >
+                    <td>${row._rank}</td>
                     <td>${row.filename}</td>
                     <td>${row.score || 0}</td>
                     <td>${(row.strengths || []).join(', ').substring(0, 50)}...</td>
-                                `;
+                `;
                 tbody.appendChild(tr);
             });
         }
 
+        let currentSort = { column: 2, asc: false };
+
         function sortTable(n) {
-            // Simplified sort for now
+            if (currentSort.column === n) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.column = n;
+                currentSort.asc = true;
+            }
+
+            // Update headers
+            const headers = ['Rank', 'Filename', 'Score', 'Strengths Preview'];
+            for (let i = 0; i <= 2; i++) {
+                const el = document.getElementById(`th-${i}`);
+                if (el) {
+                    if (i === n) {
+                        el.textContent = headers[i] + (currentSort.asc ? ' ▲' : ' ▼');
+                    } else {
+                        el.textContent = headers[i];
+                    }
+                }
+            }
+
             currentBatchResults.sort((a, b) => {
-                if (n === 1) return a.filename.localeCompare(b.filename);
-                if (n === 2) return (b.score || 0) - (a.score || 0); // score desc
-                return 0;
+                let valA, valB;
+                if (n === 0) { valA = a._rank; valB = b._rank; }
+                if (n === 1) { valA = a.filename; valB = b.filename; }
+                if (n === 2) { valA = a.score || 0; valB = b.score || 0; }
+
+                if (typeof valA === 'string' && typeof valB === 'string') {
+                    return currentSort.asc ? valA.localeCompare(valB) : valB.localeCompare(valA);
+                } else {
+                    return currentSort.asc ? (valA - valB) : (valB - valA);
+                }
             });
             renderTable();
         }
 
         function downloadCSV() {
             if (!currentBatchResults.length) return;
-            
+
             const header = ['Filename', 'Score', 'Strengths', 'Gaps'];
             const rows = currentBatchResults.map(r => [
-                r.filename, 
-                r.score, 
-                `"${(r.strengths || []).join(', ')}"`, 
+                r.filename,
+                r.score,
+                `"${(r.strengths || []).join(', ')}"`,
                 `"${(r.gaps || []).join(', ')}"`
             ]);
-            
-            const csvContent = "data:text/csv;charset=utf-8," 
+
+            const csvContent = "data:text/csv;charset=utf-8,"
                 + [header.join(','), ...rows.map(r => r.join(','))].join("\n");
-            
+
             const encodedUri = encodeURI(csvContent);
             const link = document.createElement("a");
             link.setAttribute("href", encodedUri);
