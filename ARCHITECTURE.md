@@ -12,7 +12,7 @@ TalentRank AI is built on a modern, local-first API stack:
 - **AI Orchestration**: **LangGraph** (`graph.py`) to structure the AI workflow into discrete "nodes."
 - **Embeddings**: HuggingFace's `all-MiniLM-L6-v2` run locally to convert text into mathematical vectors.
 - **Vector Database**: **FAISS** (Facebook AI Similarity Search) to store and retrieve those vectors efficiently.
-- **Large Language Model (LLM)**: **Llama 3.2 3B** (hosted locally via **vLLM** for production-grade throughput) acting as the judge.
+- **Large Language Model (LLM)**: **Llama 3.2** (hosted locally via **Ollama**) acting as the judge.
 
 ---
 
@@ -49,7 +49,7 @@ In the background, LangGraph passes the resume through a sequence of functions c
 
 #### Node 4: Grade (`grade_node`)
 - **What it does**: The actual "AI" thinking phase.
-- **How**: It connects to the local **vLLM** container using an OpenAI-compatible interface. It prompts `Llama-3.2-3B-Instruct` with the context and demands a strictly formatted JSON output grading the candidate.
+- **How**: It connects to the local **Ollama** container (`llama3.2`). It prompts the model with the context and demands a strictly formatted JSON output grading the candidate.
 
 #### Node 5: Report (`report_node`)
 - **What it does**: Cleans up the AI's response to ensure it can be parsed as valid JSON.
@@ -62,7 +62,6 @@ In the background, LangGraph passes the resume through a sequence of functions c
 
 ## 🛠️ 3. Modularity and Scale
 
-The reason this project relies on **LangGraph** and **vLLM** is for enterprise scalability:
+The reason this project relies on **LangGraph** and **Ollama** is for enterprise scalability:
 - **Asynchronous Processing**: Using `BackgroundTasks` ensures the API never times out, even if 100 resumes are uploaded at once.
-- **vLLM**: Serving the model through vLLM bypasses the inefficiencies of single-stream runners by enabling Continuous Batching and PagedAttention, significantly maximizing GPU utilization for concurrent inferences.
 - **Graph Routing**: Because the architecture uses distinct nodes, complex conditional logic can be easily added to the pipeline in the future.

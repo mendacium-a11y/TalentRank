@@ -10,22 +10,18 @@ This is a **Headless API**. There is no web UI. It is designed to be integrated 
 - **Database**: `SQLAlchemy` + `SQLite` (Persists Jobs and Candidates)
 - **AI Orchestration**: `LangGraph` + `LangChain`
 - **Vector Search**: `FAISS` + `HuggingFaceEmbeddings` (Local CPU embeddings)
-- **Inference Server**: `vLLM` running locally (OpenAI-compatible endpoints over Llama-3.2-3B-Instruct)
+- **Inference Server**: `Ollama` running locally (`llama3.2` model)
 - **Concurrency**: Fast asynchronous file handling via `BackgroundTasks`
 
 ## 🚀 Getting Started (Docker)
 
-The fastest and most robust way to run TalentRank in production is using Docker Compose. This spins up the FastAPI application alongside the blazing-fast vLLM inference engine mapping to your GPU.
+The fastest and most robust way to run TalentRank in production is using Docker Compose. This spins up the FastAPI application alongside the Ollama inference engine.
 
-1. Create a `.env` file in the project root containing your Hugging Face token (required by `vLLM` to pull the Llama 3.2 weights):
-   ```bash
-   echo "HF_TOKEN=hf_your_token_here" > .env
-   ```
-2. Start the services:
+1. Start the services:
    ```bash
    docker-compose up --build -d
    ```
-   *Note: The vLLM service requires an NVIDIA GPU and Docker configured with the NVIDIA Container Toolkit.*
+   *Note: The Ollama container is configured to automatically pull the `llama3.2` model on native startup and will attempt to utilize your NVIDIA GPU if the container toolkit is installed.*
 
 ## 💻 API Usage (CLI Examples)
 

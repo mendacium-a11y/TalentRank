@@ -5,7 +5,7 @@ from langchain_core.documents import Document
 from langchain_community.document_loaders import PyPDFLoader
 from langchain_community.vectorstores import FAISS
 from langchain_huggingface import HuggingFaceEmbeddings
-from langchain_openai import ChatOpenAI
+from langchain_ollama import ChatOllama
 from langgraph.graph import StateGraph, START, END
 
 class GraphState(TypedDict):
@@ -54,12 +54,11 @@ def grade_node(state: GraphState) -> Dict:
     context = state.get("retrieved_context", "")
     jd = state.get("jd_text", "")
     
-    # Using vLLM (Production-grade local inference) via OpenAI compatibility API
-    llm = ChatOpenAI(
-        model="hugging-quants/Llama-3.2-3B-Instruct-Q8_0-GGUF", # Or whatever model we pass to vLLM
+    # Using Ollama as the local inference engine
+    llm = ChatOllama(
+        model="llama3.2",
         temperature=0,
-        api_key="EMPTY", # vLLM doesn't require a key
-        base_url=os.getenv("VLLM_API_URL", "http://localhost:8000/v1")
+        base_url=os.getenv("OLLAMA_HOST", "http://localhost:11434")
     )
     
     prompt = f"""
