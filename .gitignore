@@ -1,0 +1,9 @@
+/test_resume/
+/test_resumes/
+talentrank.db
+server.log
+__pycache__/
+*.pyc
+.env
+mock_resume.pdf
+dummy_resume_from_curl.pdf
