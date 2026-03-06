@@ -2,10 +2,13 @@ fastapi
 uvicorn
 python-multipart
 langchain
-langchain-ollama
+langchain-openai
+langchain-community
+langchain-huggingface
+pypdf
 sentence-transformers
 unstructured[pdf]
 faiss-cpu
 langgraph
-sse-starlette
 pydantic
+sqlalchemy

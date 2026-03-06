@@ -1,0 +1,29 @@
+services:
+  api:
+    build: .
+    ports:
+      - "8000:8000"
+    environment:
+      - VLLM_API_URL=http://vllm:8000/v1
+    depends_on:
+      - vllm
+    volumes:
+      - ./talentrank.db:/app/talentrank.db
+
+  vllm:
+    image: vllm/vllm-openai:latest
+    ports:
+      - "8001:8000"
+    environment:
+      # If using an official gated model, you must provide your HF token here or in a .env file
+      - HUGGING_FACE_HUB_TOKEN=${HF_TOKEN:-} 
+    command: ["--model", "meta-llama/Llama-3.2-3B-Instruct", "--dtype", "auto", "--api-key", "EMPTY"]
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    volumes:
+      - ~/.cache/huggingface:/root/.cache/huggingface
