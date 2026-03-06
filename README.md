@@ -13,15 +13,41 @@ This is a **Headless API**. There is no web UI. It is designed to be integrated 
 - **Inference Server**: `Ollama` running locally (`llama3.2` model)
 - **Concurrency**: Fast asynchronous file handling via `BackgroundTasks`
 
-## 🚀 Getting Started (Docker)
+## 🚀 Getting Started
 
-The fastest and most robust way to run TalentRank in production is using Docker Compose. This spins up the FastAPI application alongside the Ollama inference engine.
+You can run TalentRank either using Docker Compose (recommended for production-like environments) or locally directly from your system.
+
+### Option A: Using Docker Compose
+The fastest and most robust way to run TalentRank is using Docker Compose. This spins up the FastAPI application alongside an Ollama inference container.
 
 1. Start the services:
    ```bash
-   docker-compose up --build -d
+   docker compose up --build -d
    ```
    *Note: The Ollama container is configured to automatically pull the `llama3.2` model on native startup and will attempt to utilize your NVIDIA GPU if the container toolkit is installed.*
+
+### Option B: Local Setup (Without Docker)
+If you prefer to run the API and AI inference locally on your own machine:
+
+1. **Install Dependencies:**
+   Ensure you have Python 3.10+ installed.
+   ```bash
+   pip install -r requirements.txt
+   ```
+2. **Start Local Ollama:**
+   Ensure [Ollama](https://ollama.com/) is installed on your system.
+   ```bash
+   ollama serve &
+   ```
+   Pull the Llama 3.2 model if you haven't already:
+   ```bash
+   ollama pull llama3.2
+   ```
+3. **Run the FastAPI Server:**
+   Start the application locally on your machine.
+   ```bash
+   uvicorn main:app --reload
+   ```
 
 ## 💻 API Usage (CLI Examples)
 
@@ -87,4 +113,4 @@ curl -X GET "http://localhost:8000/jobs/c1a938...af2e"
 ```
 
 ---
-*For manual development without Docker, ensure you run `pip install -r requirements.txt` and have a local vLLM or OpenAI-compatible server running on port `8001`, then run `uvicorn main:app`.*
+*For manual development without Docker, follow Option B in the Getting Started section.*
